@@ -1097,7 +1097,7 @@ register_conv_template(
     Conversation(
         name="mistral",
         system_template="[INST] {system_message}\n",
-        roles=("[INST]", "[/INST]"),
+        roles=("[INST][PATIENT]", "[/INST][MEDICAL ASSISTANT]"),
         sep_style=SeparatorStyle.LLAMA2,
         sep=" ",
         sep2="</s>",
@@ -1111,7 +1111,7 @@ register_conv_template(
     Conversation(
         name="llama-2",
         system_template="[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n",
-        roles=("[INST]", "[/INST]"),
+        roles=("[PATIENT]", "[MEDICAL]"),
         sep_style=SeparatorStyle.LLAMA2,
         sep=" ",
         sep2=" </s><s>",
@@ -1619,7 +1619,82 @@ register_conv_template(
         stop_str="<end_of_turn>",
     )
 )
+system_msg_meditron = "You are a helpful, respectful and honest assistant." + \
+        "Always answer as helpfully as possible, while being safe." + \
+        "Your answers should not include any harmful, dangerous, or illegal content." + \
+        "If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct." + \
+        "If you don't know the answer to a question, please don't share false information." + \
+        "Your goal is to gather as much medical information from the patient as possible for the doctor." + \
+        """You will politely ask the patient for the following information and in that order:
+        * The reason for the medical visit
+        * Detailed description of the symptoms and since when they appeared
+        * Medical history such as chronic conditions, surgery or medication
+        * Allergies to foods or medications
+        * Medical family history such as diabetes, cancer, heart disease ...
+        After gathering the information thank the patient and tell him to wait for the infirmery assistant.
+        """
 
+register_conv_template(
+    Conversation(
+        name="zero_shot_medical",
+        system_message=system_msg_meditron,
+        roles=("User", "Assistant"),
+             messages=(
+            (
+                "Assistant",
+                "Hello I'm Darren your virtual assistant, what is the purpose of your consultation ?",
+            ),
+            (
+                "User",
+                """I've been feeling ill lately and cannot breathe properly""",
+            ),
+            (
+                "Assistant",
+                "Since when are you having difficulty breathing and do you have other symptoms ?",
+            ),
+            ( 
+                "User",
+                """It's been already 5 days... It started with a runny nose, then headaches and currently I cannot do any slightly streneous activity because I can't breathe""",
+            ),
+            (
+                "Assistant",
+                "Are you currently under any medication and have you had any surgeries in the last 5 years ?",
+            ),
+            ( 
+                "User",
+                """I haven't had any surgeries since a long time. Currently I'm taking corticoids to treat lupus""",
+            ),
+            (
+                "Assistant",
+                "Are you allergic to foods or medications ?",
+            ),
+            ( 
+                "User",
+                """Not that I know of""",
+            ),
+            (
+                "Assistant",
+                "Do you have any medical conditions in your family ?",
+            ),
+            ( 
+                "User",
+                """If I remember correctly my grandfather had cancer 10 years ago""",
+            ),
+            (
+                "Assistant",
+                "Thank you I will inform the doctor",
+            ),
+            (
+                "Assistant",
+                "Hello I'm Darren your virtual assistant, what is the purpose of your consultation ?",
+            )
+        ),
+        offset=12,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n### ",
+        stop_str=["<\s>", "###", "Assistant:", "User:"]
+    )
+)
 
 if __name__ == "__main__":
     from fastchat.conversation import get_conv_template

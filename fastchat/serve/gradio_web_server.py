@@ -245,6 +245,11 @@ def clear_history(request: gr.Request):
     state = None
     return (state, [], "", None) + (disable_btn,) * 5
 
+def end_conversation(request: gr.Request):
+    ip = get_ip(request)
+    logger.info(f"clear_history. ip: {ip}")
+    state = None
+    return (state, [], "", None) + (disable_btn,) * 5
 
 def get_ip(request: gr.Request):
     if "cf-connecting-ip" in request.headers:
@@ -682,6 +687,7 @@ def build_single_model_ui(models, add_promotion_links=False):
         chatbot = gr.Chatbot(
             elem_id="chatbot",
             label="Scroll down and start chatting",
+            placeholder="Hello I'm Darren your virtual assistant, what is the purpose of your consultation ?",
             height=550,
             show_copy_button=True,
         )
@@ -694,10 +700,8 @@ def build_single_model_ui(models, add_promotion_links=False):
         send_btn = gr.Button(value="Send", variant="primary", scale=0)
 
     with gr.Row() as button_row:
-        upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
-        downvote_btn = gr.Button(value="👎  Downvote", interactive=False)
-        flag_btn = gr.Button(value="⚠️  Flag", interactive=False)
-        regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
+
+        end_conversation_btn = gr.Button(value="🔄  End conversation", interactive=False)
         clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
 
     with gr.Accordion("Parameters", open=False) as parameter_row:
@@ -731,29 +735,9 @@ def build_single_model_ui(models, add_promotion_links=False):
 
     # Register listeners
     imagebox = gr.State(None)
-    btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
-    upvote_btn.click(
-        upvote_last_response,
-        [state, model_selector],
-        [textbox, upvote_btn, downvote_btn, flag_btn],
-    )
-    downvote_btn.click(
-        downvote_last_response,
-        [state, model_selector],
-        [textbox, upvote_btn, downvote_btn, flag_btn],
-    )
-    flag_btn.click(
-        flag_last_response,
-        [state, model_selector],
-        [textbox, upvote_btn, downvote_btn, flag_btn],
-    )
-    regenerate_btn.click(
-        regenerate, state, [state, chatbot, textbox, imagebox] + btn_list
-    ).then(
-        bot_response,
-        [state, temperature, top_p, max_output_tokens],
-        [state, chatbot] + btn_list,
-    )
+    btn_list = [end_conversation_btn, clear_btn]
+
+    end_conversation_btn.click(end_conversation, None, [state, chatbot, textbox, imagebox] + btn_list)
     clear_btn.click(clear_history, None, [state, chatbot, textbox, imagebox] + btn_list)
 
     model_selector.change(

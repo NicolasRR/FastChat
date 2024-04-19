@@ -379,7 +379,7 @@ def load_model(
 
 def get_conversation_template(model_path: str) -> Conversation:
     """Get the default conversation template."""
-    adapter = get_model_adapter(model_path)
+    adapter = MeditronAdapter()
     return adapter.get_default_conv_template(model_path)
 
 
@@ -2306,6 +2306,22 @@ class CllmAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("cllm")
 
+class MeditronAdapter(BaseModelAdapter):
+    """The model adapter for Meditron"""
+
+    def match(self, model_path: str):
+        return "meditron" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("zero_shot_medical") # or meditron_one_shot, meditron
+
+register_model_adapter(MeditronAdapter)
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
